@@ -27,4 +27,3 @@ jobs:
           payload: ${{ env.SLACK_MESSAGE }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
