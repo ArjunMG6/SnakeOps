@@ -1,4 +1,4 @@
-name: Slack Notification on Push
+name: Slack Notifications
 
 on:
   push:
@@ -7,17 +7,24 @@ on:
       - develop
 
 jobs:
-  notify:
+  slack-notify:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Notify Slack of push
+      - name: Set Slack message
+        id: set_message
+        run: |
+          echo "SLACK_MESSAGE=$(jq -n \
+            --arg branch "${GITHUB_REF_NAME}" \
+            --arg actor "${GITHUB_ACTOR}" \
+            --arg message "${{ github.event.head_commit.message }}" \
+            --arg url "${{ github.event.head_commit.url }}" \
+            '{ text: "🚀 A push was made to *\($branch)* by *\($actor)*.\n💬 Commit message: \($message)\n🔗 <\($url)|View Commit>" }')" >> $GITHUB_ENV
+
+      - name: Send Slack notification
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          payload: |
-            {
-              "text": "🚀 A new push was made to *${{ github.ref_name }}* by *${{ github.actor }}*.\n\n💬 Commit Message:\n>${{ github.event.head_commit.message }}\n🔗 <${{ github.event.head_commit.url }}|View Commit>"
-            }
+          payload: ${{ env.SLACK_MESSAGE }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
