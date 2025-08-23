@@ -1,13 +1,7 @@
-name: Slack Notificationsi For SnakeOps
+name: Slack Notifications for SnakeOps
 
 on:
   push:
-    branches:
-      - main
-      - develop
-
-  pull_request:
-    types: [opened, closed]
     branches:
       - main
       - develop
@@ -17,37 +11,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set Slack message
-        id: set_message
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "SLACK_MESSAGE=$(jq -n \
-              --arg branch "${GITHUB_REF_NAME}" \
-              --arg actor "${GITHUB_ACTOR}" \
-              --arg message "${{ github.event.head_commit.message }}" \
-              --arg url "${{ github.event.head_commit.url }}" \
-              '{ text: "🚀 A push was made to *\($branch)* by *\($actor)*.\n💬 Commit message: \($message)\n🔗 <\($url)|View Commit>" }')" >> $GITHUB_ENV
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            pr_action="${{ github.event.action }}"
-            pr_title="${{ github.event.pull_request.title }}"
-            pr_user="${{ github.actor }}"
-            pr_url="${{ github.event.pull_request.html_url }}"
-            pr_base="${{ github.event.pull_request.base.ref }}"
-            pr_state="${{ github.event.pull_request.merged == true && 'merged' || pr_action }}"
-
-            echo "SLACK_MESSAGE=$(jq -n \
-              --arg title "$pr_title" \
-              --arg user "$pr_user" \
-              --arg url "$pr_url" \
-              --arg base "$pr_base" \
-              --arg state "$pr_state" \
-              '{ text: "📦 Pull Request *\($state)* on branch *\($base)* by *\($user)*.\n📝 Title: \($title)\n🔗 <\($url)|View Pull Request>" }')" >> $GITHUB_ENV
-          fi
-
-      - name: Send Slack notification
+      - name: Send Slack Notification
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          payload: ${{ env.SLACK_MESSAGE }}
+          payload: |
+            {
+              "text": "🚀 A push was made to *${{ github.ref_name }}* by *${{ github.actor }}*.\n💬 Commit message: `${{ github.event.head_commit.message }}`\n🔗 <${{ github.event.head_commit.url }}|View Commit>"
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
